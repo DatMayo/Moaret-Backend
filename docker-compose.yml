@@ -28,5 +28,7 @@ services:
       MYSQL_USER: root
       MYSQL_PASSWORD: changeme
       MYSQL_DB: m_api
+
+      PORT: 3000
     depends_on:
       - database
