@@ -1,0 +1,30 @@
+services:
+  database:
+    image: mariadb
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: changeme
+      MYSQL_DATABASE: m_api
+
+  web:
+    build: .
+    ports:
+      - 3000:3000
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
+    command: npm run debug
+    environment:
+      NODE_ENV: debug
+
+      ACCESS_TOKEN_SECRET: b17aba7e1c9e6d8a68e5e9f0911416f3cd0f7056803c92855bdae5f6870a09e804ec8d26677391c332440c2de1d25232c243abbf07b725d269811388a36c2d87
+      REFRESH_TOKEN_SECRET: 925c5f7217a8cc514133b0f1e8bc129e5199a1018fa402966ad36345e3ec27ed486dfd3d665bb61f47defb755d30aec62be04a287564884efedce3a4a455396f
+
+      MYSQL_HOST: database
+      MYSQL_USER: root
+      MYSQL_PASSWORD: changeme
+      MYSQL_DB: m_api
+    depends_on:
+      - database
