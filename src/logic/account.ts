@@ -9,5 +9,7 @@ export class Account {
     // ToDo: Login magic
   }
 
-  register(password: string) {}
+  register(password: string) {
+    // ToDo: Register magic
+  }
 }
