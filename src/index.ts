@@ -6,6 +6,9 @@ import express from "express";
 import helmet from "helmet";
 import morgan from "morgan";
 import cors from "cors";
+import { IResponse } from "./interfaces";
+import { Account } from "./logic";
+import { AccountList } from "./routes/user";
 
 let sqlConnection: NodeJS.Timer;
 
@@ -17,10 +20,24 @@ async function connectTooDb() {
       `Successfully connected to database ${process.env.MYSQL_USER}@${process.env.MYSQL_HOST}`
     );
 
+    const accHandle = new Account();
+    const user = await accHandle.getByUsername("admin");
+    if (!user) {
+      const adminCreateResult = await accHandle.create(
+        "admin",
+        "admin",
+        "changeme@somewhere.com"
+      );
+      const message = adminCreateResult
+        ? "Successfully created admin account"
+        : "Could not create admin account";
+      console.log(message);
+    }
+
     startServer();
   } catch (error) {
     setTimeout(connectTooDb, 1000);
-    console.log("Error while connecting to the database", error);
+    console.log("Error while connecting to the database");
   }
 }
 
@@ -40,13 +57,18 @@ function startServer() {
 
   app.get("/favicon.ico", (req, res) => res.status(204));
 
+  app.use("/account", [AccountList]);
+
   app.all("*", (req, res) => {
-    res.status(404).send({
+    const errorResponse: IResponse = {
       code: 404,
-      error: {
-        msg: "The given site does not exist",
-      },
-    });
+      error: [
+        {
+          msg: "The given site does not exist",
+        },
+      ],
+    };
+    res.status(errorResponse.code).send(errorResponse);
   });
 
   app.listen(process.env.PORT, () => {
