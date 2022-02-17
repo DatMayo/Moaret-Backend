@@ -1,5 +1,5 @@
 import { ConnectionOptions } from "typeorm";
-import { DBUser } from "./entities/User";
+import { DBCompany, DBUser } from "./entities";
 
 const config: ConnectionOptions = {
   type: "mysql",
@@ -9,7 +9,7 @@ const config: ConnectionOptions = {
   password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DB,
   // entities: [__dirname + "./entities/*.{.ts,.js}"],
-  entities: [DBUser],
+  entities: [DBCompany, DBUser],
   cli: {
     migrationsDir: "src/db/migrations",
   },
