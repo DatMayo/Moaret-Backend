@@ -1,4 +1,4 @@
-import { Connection, getConnection, Repository } from "typeorm";
+import { Connection, getConnection, getRepository, Repository } from "typeorm";
 import { DBUser } from "../db/entities";
 import { compareSync, hashSync } from "bcryptjs";
 
@@ -16,42 +16,41 @@ export class Account {
     user.username = username;
     user.password = hashSync(password);
     user.mail = mail;
+    user.firstName = undefined;
+    user.lastName = undefined;
     const result = await this._repositoryUser.save(user);
     return result;
   }
 
-  async getAll() {
-    return await this._repositoryUser.find({
-      select: ["id", "username", "mail"],
-    });
+  async getAll(): Promise<DBUser[]> {
+    return await getRepository(DBUser)
+      .createQueryBuilder("usr")
+      .leftJoinAndSelect("usr.companies", "usrCompanies")
+      .getMany();
   }
 
-  async getById(userId: number) {
-    return await this._repositoryUser.findOne({
-      select: ["id", "username", "mail"],
-      where: {
-        id: userId,
-      },
-    });
+  async getById(userId: number): Promise<DBUser | undefined> {
+    return getRepository(DBUser)
+      .createQueryBuilder("usr")
+      .leftJoinAndSelect("usr.companies", "usrCompanies")
+      .where("usr.id = :usrId", { usrId: userId })
+      .getOne();
   }
 
-  async getByUsername(user: string) {
-    return await this._repositoryUser.findOne({
-      select: ["id", "username", "mail"],
-      where: {
-        username: user,
-      },
-    });
+  async getByUsername(user: string): Promise<DBUser[]> {
+    return getRepository(DBUser)
+      .createQueryBuilder("usr")
+      .leftJoinAndSelect("usr.companies", "usrCompanies")
+      .where("usr.username = :usrName", { usrName: user })
+      .getMany();
   }
 
   async login(user: string, pwd: string) {
-    const userHandle = await this._repositoryUser.findOne({
-      select: ["id", "username", "mail", "password"],
-      where: {
-        username: user,
-      },
-    });
+    const userHandle = await this.getByUsername(user);
+    console.log(userHandle);
     if (!userHandle) return false;
-    return compareSync(pwd, userHandle.password);
+    if (userHandle.length === 0) return false;
+    if (userHandle.length > 1) return false;
+    return compareSync(pwd, userHandle[0].password);
   }
 }

@@ -1,22 +1,52 @@
-import { Connection, getConnection } from "typeorm";
+import {
+  Connection,
+  createQueryBuilder,
+  getConnection,
+  getRepository,
+  Repository,
+} from "typeorm";
+import { DBCompany } from "../db/entities";
+import { Account } from "./";
 
 export class Company {
   private _connection: Connection;
+  private _repositoryCompany: Repository<DBCompany>;
 
   constructor() {
     this._connection = getConnection();
-    // ToDo
+    this._repositoryCompany = this._connection.getRepository(DBCompany);
   }
 
-  create(name: string) {
-    // ToDo
+  async create(name: string, ownerId: number): Promise<boolean> {
+    const accountHandle = new Account();
+    const userAccount = await accountHandle.getById(ownerId);
+    if (!userAccount) return false;
+
+    const compHandle = new DBCompany();
+    compHandle.name = name;
+    compHandle.owner = userAccount;
+    const result = await this._repositoryCompany.save(compHandle);
+    return !!result;
   }
 
-  getById(companyId: number) {
-    // ToDo
+  async getAll(): Promise<DBCompany[]> {
+    return getRepository(DBCompany)
+      .createQueryBuilder("comp")
+      .leftJoinAndSelect("comp.owner", "compOwner")
+      .getMany();
   }
 
-  getByName(companyName: string) {
-    // ToDo
+  getById(companyId: number): Promise<DBCompany | undefined> {
+    return getRepository(DBCompany)
+      .createQueryBuilder("comp")
+      .where("comp.id = :compId", { compId: companyId })
+      .getOne();
+  }
+
+  getByName(companyName: string): Promise<DBCompany[]> {
+    return getRepository(DBCompany)
+      .createQueryBuilder("comp")
+      .where("comp.name = :compName", { compName: companyName })
+      .getMany();
   }
 }
