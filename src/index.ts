@@ -8,7 +8,9 @@ import morgan from "morgan";
 import cors from "cors";
 import { IResponse } from "./interfaces";
 import { Account } from "./logic";
-import { AccountList } from "./routes/user";
+
+import { AccountList, AccountLogin } from "./routes/account";
+import { CompanyList } from "./routes/company";
 
 let sqlConnection: NodeJS.Timer;
 
@@ -20,23 +22,29 @@ async function connectTooDb() {
       `Successfully connected to database ${process.env.MYSQL_USER}@${process.env.MYSQL_HOST}`
     );
 
-    const accHandle = new Account();
-    const user = await accHandle.getByUsername("admin");
-    if (!user) {
-      const adminCreateResult = await accHandle.create(
-        "admin",
-        "admin",
-        "changeme@somewhere.com"
-      );
-      const message = adminCreateResult
-        ? "Successfully created admin account"
-        : "Could not create admin account";
-      console.log(message);
+    try {
+      const accHandle = new Account();
+      const user = await accHandle.getByUsername("admin");
+      if (!user) {
+        const adminCreateResult = await accHandle.create(
+          "admin",
+          "admin",
+          "changeme@somewhere.com"
+        );
+        const message = adminCreateResult
+          ? "Successfully created admin account"
+          : "Could not create admin account";
+        console.log(message);
+      }
+    } catch (err) {
+      console.log("Could not create admin account");
+      console.log(err);
     }
 
     startServer();
+    clearTimeout(sqlConnection);
   } catch (error) {
-    setTimeout(connectTooDb, 1000);
+    sqlConnection = setTimeout(connectTooDb, 1000);
     console.log("Error while connecting to the database");
   }
 }
@@ -57,7 +65,8 @@ function startServer() {
 
   app.get("/favicon.ico", (req, res) => res.status(204));
 
-  app.use("/account", [AccountList]);
+  app.use("/account", [AccountList, AccountLogin]);
+  app.use("/company", [CompanyList]);
 
   app.all("*", (req, res) => {
     const errorResponse: IResponse = {
